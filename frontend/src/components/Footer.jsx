@@ -30,6 +30,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 mt-8 pt-4 border-t border-red-900 text-center">
         <p className="mb-2">&copy; 2026 Shri Durga Chamcham Wale. All Rights Reserved.</p>
         <p className="font-medium text-brand-gold">Designed &amp; Developed with ❤️ by Deepak Kumar Rautela</p>
+        <p className="text-sm text-brand-cream opacity-80 mt-1">Contact Developer: <a href="mailto:devbaghel9791@gmail.com" className="hover:text-brand-gold transition-colors">devbaghel9791@gmail.com</a></p>
       </div>
     </footer>
   );
