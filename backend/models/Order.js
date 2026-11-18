@@ -1,6 +1,8 @@
 import mongoose from 'mongoose';
 
 const orderSchema = new mongoose.Schema({
+  customerName: { type: String, required: true },
+  phoneNumber: { type: String, required: true },
   shippingAddress: {
     googleMapsLink: { type: String, required: true },
     pincode: { type: String, required: true },
