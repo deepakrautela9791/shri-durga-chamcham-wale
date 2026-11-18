@@ -41,3 +41,22 @@ export const getOrders = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Update Order Status
+export const updateOrderStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    const order = await Order.findById(id);
+    
+    if (order) {
+      order.status = status;
+      const updatedOrder = await order.save();
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
