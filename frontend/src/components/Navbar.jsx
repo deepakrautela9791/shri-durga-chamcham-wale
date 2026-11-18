@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
 import { FaShoppingCart, FaUser, FaSearch } from 'react-icons/fa';
+import { useCart } from '../context/CartContext';
 
 const Navbar = () => {
+  const { getCartCount } = useCart();
+
   return (
     <header className="bg-brand-maroon text-white sticky top-0 z-50 shadow-lg">
       <div className="container mx-auto px-4 py-3">
@@ -22,6 +25,7 @@ const Navbar = () => {
           <div className="flex items-center space-x-4">
             <Link to="/cart" className="hover:text-brand-gold relative">
               <FaShoppingCart className="text-xl" />
+              <span className="absolute -top-2 -right-2 bg-brand-gold text-brand-maroon text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">{getCartCount()}</span>
             </Link>
           </div>
         </div>
