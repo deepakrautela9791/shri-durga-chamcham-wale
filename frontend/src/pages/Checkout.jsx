@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
+import { useNavigate } from 'react-router-dom';
 import { FaWhatsapp, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 
 const Checkout = () => {
   const { cart, getCartTotal } = useCart();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     customerName: '', phoneNumber: '',
     googleMapsLink: '', pincode: '', cityVillage: '', district: '', state: '',
@@ -11,6 +13,7 @@ const Checkout = () => {
   });
   const [deliveryStatus, setDeliveryStatus] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const serviceablePincodes = ['202124', '202123', '202125', '202001', '202002'];
 
@@ -31,8 +34,56 @@ const Checkout = () => {
     }
   };
 
-  const placeOrder = () => {
-    alert('Order placed successfully! Order ID: SDCW' + Math.floor(Math.random() * 100000));
+  const placeOrder = async () => {
+    if (!formData.customerName || !formData.phoneNumber || !formData.googleMapsLink) {
+      alert('Please fill all mandatory fields (*)');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    try {
+      const orderData = {
+        customerName: formData.customerName,
+        phoneNumber: formData.phoneNumber,
+        shippingAddress: {
+          googleMapsLink: formData.googleMapsLink,
+          pincode: formData.pincode,
+          cityVillage: formData.cityVillage,
+          district: formData.district,
+          state: formData.state,
+          postOffice: formData.postOffice,
+          tehsil: formData.tehsil,
+          houseNo: formData.houseNo,
+          street: formData.street,
+          landmark: formData.landmark
+        },
+        orderItems: cart,
+        paymentMethod: paymentMethod,
+        totalAmount: getCartTotal()
+      };
+
+      const response = await fetch('http://localhost:5000/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(orderData)
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`Order placed successfully! Your Order ID is ${data._id}`);
+        navigate('/');
+      } else {
+        const errorData = await response.json();
+        alert(`Failed to place order: ${errorData.message}`);
+      }
+    } catch (error) {
+      console.error('Order error:', error);
+      alert('Something went wrong! Please make sure the backend server is running.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -143,8 +194,8 @@ const Checkout = () => {
                   <span>Online UPI / Card</span>
                 </label>
               </div>
-              <button onClick={placeOrder} className="bg-brand-maroon text-brand-gold font-bold py-3 px-6 rounded-md hover:bg-red-800 w-full text-lg shadow-lg">
-                Place Order (₹{getCartTotal()})
+              <button onClick={placeOrder} disabled={isSubmitting} className="bg-brand-maroon text-brand-gold font-bold py-3 px-6 rounded-md hover:bg-red-800 w-full text-lg shadow-lg disabled:opacity-50">
+                {isSubmitting ? 'Placing Order...' : `Place Order (₹${getCartTotal()})`}
               </button>
             </div>
           )}
