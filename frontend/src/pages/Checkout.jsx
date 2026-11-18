@@ -5,6 +5,7 @@ import { FaWhatsapp, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 const Checkout = () => {
   const { cart, getCartTotal } = useCart();
   const [formData, setFormData] = useState({
+    customerName: '', phoneNumber: '',
     googleMapsLink: '', pincode: '', cityVillage: '', district: '', state: '',
     postOffice: '', tehsil: '', houseNo: '', street: '', landmark: ''
   });
@@ -42,6 +43,14 @@ const Checkout = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Delivery Address</h2>
           <form>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-gray-700 font-bold mb-2">Full Name *</label>
+                <input type="text" name="customerName" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="Enter your full name" required />
+              </div>
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-gray-700 font-bold mb-2">Phone Number *</label>
+                <input type="tel" name="phoneNumber" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="10-digit mobile number" required />
+              </div>
               <div className="col-span-1 md:col-span-2">
                 <label className="block text-gray-700 font-bold mb-2">Google Maps Location Link *</label>
                 <input type="text" name="googleMapsLink" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="Paste your map link here" required />
