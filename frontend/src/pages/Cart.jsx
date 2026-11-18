@@ -29,7 +29,7 @@ const Cart = () => {
           ))}
           <div className="text-right mt-6">
             <h3 className="text-2xl font-bold text-gray-900">Total: ₹{getCartTotal()}</h3>
-            <button className="bg-brand-maroon text-white font-bold py-3 px-8 rounded mt-4 hover:bg-red-800 w-full sm:w-auto">Proceed to Checkout</button>
+            <Link to="/checkout" className="inline-block bg-brand-maroon text-white font-bold py-3 px-8 rounded mt-4 hover:bg-red-800 w-full sm:w-auto text-center">Proceed to Checkout</Link>
           </div>
         </div>
       )}
