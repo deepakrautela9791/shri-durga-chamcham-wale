@@ -1,49 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
-import { FaWhatsapp, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { API_URL } from '../api';
 
 const Checkout = () => {
-  const { cart, getCartTotal } = useCart();
+  const { cart, getCartTotal, clearCart } = useCart();
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    customerName: '', phoneNumber: '',
-    googleMapsLink: '', pincode: '', cityVillage: '', district: '', state: '',
-    postOffice: '', tehsil: '', houseNo: '', street: '', landmark: ''
-  });
-  const [deliveryStatus, setDeliveryStatus] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('cod');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const serviceablePincodes = ['202124', '202123', '202125', '202001', '202002'];
+  const [formData, setFormData] = useState({
+    customerName: '',
+    phoneNumber: '',
+    googleMapsLink: '',
+    pincode: '',
+    cityVillage: '',
+    district: '',
+    state: '',
+    postOffice: '',
+    tehsil: '',
+    houseNo: '',
+    street: '',
+    landmark: ''
+  });
+
+  const [paymentMethod, setPaymentMethod] = useState('COD');
+  const [deliveryAreas, setDeliveryAreas] = useState([]);
+  const [pincodeStatus, setPincodeStatus] = useState(null);
+  const [mapUrlError, setMapUrlError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(null);
+
+  useEffect(() => {
+    const fetchDeliveryAreas = async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/delivery-areas`);
+        const data = await res.json();
+        setDeliveryAreas(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('Error fetching delivery areas:', err);
+      }
+    };
+    fetchDeliveryAreas();
+  }, []);
+
+  const validateGoogleMapsUrl = (url) => {
+    if (!url) return false;
+    const regex = /^(https?:\/\/)?(www\.)?(maps\.google\.com|goo\.gl\/maps|maps\.app\.goo\.gl)\/.+/i;
+    return regex.test(url.trim());
+  };
 
   const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'pincode') {
+      if (value.trim().length === 6) {
+        const activeAreas = deliveryAreas.filter(a => a.isActive);
+        const match = activeAreas.find(a => a.pincode === value.trim());
+        if (match) {
+          setPincodeStatus({ available: true, message: `Delivery available for ${match.areaName}!` });
+        } else {
+          setPincodeStatus({ available: false, message: 'Delivery not available for this pincode.' });
+        }
+      } else {
+        setPincodeStatus(null);
+      }
+    }
+
+    if (name === 'googleMapsLink') {
+      if (value.trim() && !validateGoogleMapsUrl(value)) {
+        setMapUrlError('Please provide a valid Google Maps link (maps.google.com, goo.gl/maps, or maps.app.goo.gl)');
+      } else {
+        setMapUrlError('');
+      }
+    }
   };
 
-  const checkDelivery = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (formData.pincode.length !== 6) {
-      alert('Please enter a valid 6-digit PIN code.');
-      return;
-    }
-    if (serviceablePincodes.includes(formData.pincode)) {
-      setDeliveryStatus('available');
-    } else {
-      setDeliveryStatus('unavailable');
-    }
-  };
 
-  const placeOrder = async () => {
-    if (!formData.customerName || !formData.phoneNumber || !formData.googleMapsLink) {
-      alert('Please fill all mandatory fields (*)');
+    if (!validateGoogleMapsUrl(formData.googleMapsLink)) {
+      setMapUrlError('Please provide a valid Google Maps link (maps.google.com, goo.gl/maps, or maps.app.goo.gl)');
       return;
     }
-    
+
+    if (pincodeStatus && !pincodeStatus.available) {
+      alert('Delivery is not available in your area.');
+      return;
+    }
+
     setIsSubmitting(true);
+
     try {
-      const orderData = {
+      const orderPayload = {
         customerName: formData.customerName,
         phoneNumber: formData.phoneNumber,
         shippingAddress: {
@@ -58,151 +107,249 @@ const Checkout = () => {
           street: formData.street,
           landmark: formData.landmark
         },
-        orderItems: cart,
+        orderItems: cart.map(item => ({
+          name: item.name,
+          weight: item.weight,
+          quantity: item.quantity,
+          price: item.price
+        })),
         paymentMethod: paymentMethod,
+        paymentStatus: paymentMethod === 'Online' ? 'Paid' : 'Pending',
         totalAmount: getCartTotal()
       };
 
-      const response = await fetch(`${API_URL}/api/orders`, {
+      const res = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData)
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderPayload)
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        alert(`Order placed successfully! Your Order ID is ${data._id}`);
-        navigate('/');
+      const data = await res.json();
+
+      if (res.ok) {
+        setOrderSuccess(data);
+        if (clearCart) clearCart();
       } else {
-        const errorData = await response.json();
-        alert(`Failed to place order: ${errorData.message}`);
+        alert(data.message || 'Failed to place order.');
       }
-    } catch (error) {
-      console.error('Order error:', error);
-      alert('Something went wrong! Please make sure the backend server is running.');
+    } catch (err) {
+      console.error('Error placing order:', err);
+      alert('An error occurred while placing your order.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-brand-maroon text-center mb-8">Checkout</h1>
-      <div className="flex flex-col lg:flex-row gap-8">
-        <div className="lg:w-2/3 bg-white p-6 rounded-lg shadow-md border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">Delivery Address</h2>
-          <form>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-gray-700 font-bold mb-2">Full Name *</label>
-                <input type="text" name="customerName" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="Enter your full name" required />
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-gray-700 font-bold mb-2">Phone Number *</label>
-                <input type="tel" name="phoneNumber" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="10-digit mobile number" required />
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-gray-700 font-bold mb-2">Google Maps Location Link *</label>
-                <input type="text" name="googleMapsLink" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="Paste your map link here" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">PIN Code *</label>
-                <input type="text" name="pincode" onChange={handleInputChange} maxLength="6" className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="6-digit PIN" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Village / City Name *</label>
-                <input type="text" name="cityVillage" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">District *</label>
-                <input type="text" name="district" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">State *</label>
-                <input type="text" name="state" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" required />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Post Office (Optional)</label>
-                <input type="text" name="postOffice" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Tehsil / Block (Optional)</label>
-                <input type="text" name="tehsil" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">House Number (Optional)</label>
-                <input type="text" name="houseNo" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" placeholder="Leave empty for village" />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Street / Mohalla (Optional)</label>
-                <input type="text" name="street" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" />
-              </div>
-              <div className="col-span-1 md:col-span-2">
-                <label className="block text-gray-700 font-bold mb-2">Landmark (Optional)</label>
-                <input type="text" name="landmark" onChange={handleInputChange} className="w-full border rounded p-2 focus:ring-brand-gold" />
-              </div>
-            </div>
-            <button onClick={checkDelivery} className="bg-gray-800 text-white font-bold py-3 px-6 rounded-md hover:bg-gray-900 w-full mb-4">
-              Check Delivery Availability
-            </button>
-          </form>
+  if (orderSuccess) {
+    return (
+      <div className="container mx-auto px-4 py-12 max-w-2xl text-center">
+        <div className="bg-white p-8 rounded-xl shadow-md border-t-4 border-green-600">
+          <FaCheckCircle className="text-6xl text-green-600 mx-auto mb-4" />
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">Order Placed Successfully!</h2>
+          <p className="text-gray-600 mb-6">Thank you for your order. We will process it shortly.</p>
+          <div className="bg-gray-50 p-4 rounded-lg text-left mb-6 font-mono text-sm">
+            <p><strong>Order ID:</strong> {orderSuccess._id}</p>
+            <p><strong>Total Amount:</strong> ₹{orderSuccess.totalAmount}</p>
+            <p><strong>Payment Method:</strong> {orderSuccess.paymentMethod}</p>
+            <p><strong>Payment Status:</strong> {orderSuccess.paymentStatus}</p>
+          </div>
+          <button
+            onClick={() => navigate('/')}
+            className="bg-red-800 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-900 transition"
+          >
+            Back to Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-          {deliveryStatus === 'available' && (
-            <div className="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-4 rounded flex items-center gap-3">
-              <FaCheckCircle className="text-xl" />
-              <p className="font-bold">Great! Delivery is available at your location.</p>
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <h1 className="text-3xl font-bold text-brand-maroon mb-6">Checkout</h1>
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold border-b pb-2">Customer & Shipping Info</h2>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Customer Name *</label>
+            <input
+              type="text"
+              name="customerName"
+              required
+              value={formData.customerName}
+              onChange={handleInputChange}
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Phone Number *</label>
+            <input
+              type="tel"
+              name="phoneNumber"
+              required
+              value={formData.phoneNumber}
+              onChange={handleInputChange}
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Google Maps Location Link *</label>
+            <input
+              type="url"
+              name="googleMapsLink"
+              required
+              placeholder="https://maps.app.goo.gl/..."
+              value={formData.googleMapsLink}
+              onChange={handleInputChange}
+              className={`w-full border rounded px-3 py-2 text-sm focus:outline-none ${mapUrlError ? 'border-red-500' : 'focus:border-red-500'}`}
+            />
+            {mapUrlError && <p className="text-red-500 text-xs mt-1">{mapUrlError}</p>}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-1">Pincode *</label>
+              <input
+                type="text"
+                name="pincode"
+                required
+                maxLength="6"
+                value={formData.pincode}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">City / Village *</label>
+              <input
+                type="text"
+                name="cityVillage"
+                required
+                value={formData.cityVillage}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+          </div>
+          {pincodeStatus && (
+            <div className={`p-3 rounded text-sm flex items-center space-x-2 ${pincodeStatus.available ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              {pincodeStatus.available ? <FaCheckCircle /> : <FaTimesCircle />}
+              <span>{pincodeStatus.message}</span>
             </div>
           )}
-          {deliveryStatus === 'unavailable' && (
-            <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4 rounded">
-              <div className="flex items-center gap-3 mb-2">
-                <FaTimesCircle className="text-xl" />
-                <p className="font-bold">Sorry! Delivery service is not available at your location.</p>
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-1">District *</label>
+              <input
+                type="text"
+                name="district"
+                required
+                value={formData.district}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
             </div>
-          )}
+            <div>
+              <label className="block text-sm font-semibold mb-1">State *</label>
+              <input
+                type="text"
+                name="state"
+                required
+                value={formData.state}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold mb-1">House / Flat No.</label>
+              <input
+                type="text"
+                name="houseNo"
+                value={formData.houseNo}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-1">Street / Colony</label>
+              <input
+                type="text"
+                name="street"
+                value={formData.street}
+                onChange={handleInputChange}
+                className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-1">Landmark</label>
+            <input
+              type="text"
+              name="landmark"
+              value={formData.landmark}
+              onChange={handleInputChange}
+              className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:border-red-500"
+            />
+          </div>
         </div>
 
-        <div className="lg:w-1/3">
-          <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
-            <h2 className="text-xl font-bold text-brand-maroon mb-4">Order Summary</h2>
-            <div className="border-b pb-4 mb-4 max-h-60 overflow-y-auto">
+        <div className="space-y-6">
+          <div className="bg-gray-50 p-6 rounded-xl border">
+            <h2 className="text-xl font-semibold mb-4 border-b pb-2">Order Summary</h2>
+            <div className="space-y-3 max-h-60 overflow-y-auto mb-4">
               {cart.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm mb-2">
-                  <span>{item.qty}x {item.name} ({item.weight})</span>
-                  <span className="font-bold">₹{item.price}</span>
+                <div key={idx} className="flex justify-between text-sm">
+                  <span>{item.quantity} x {item.name} ({item.weight})</span>
+                  <span className="font-semibold">₹{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
-            <div className="flex justify-between text-lg font-bold">
+            <div className="border-t pt-4 flex justify-between text-lg font-bold">
               <span>Total Amount:</span>
-              <span>₹{getCartTotal()}</span>
+              <span className="text-red-800">₹{getCartTotal()}</span>
             </div>
           </div>
 
-          {deliveryStatus === 'available' && (
-            <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-              <h2 className="text-xl font-bold text-brand-maroon mb-4">Payment Method</h2>
-              <div className="space-y-3 mb-6">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="payment" value="cod" checked={paymentMethod === 'cod'} onChange={(e) => setPaymentMethod(e.target.value)} className="text-brand-maroon" />
-                  <span>Cash on Delivery</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="radio" name="payment" value="upi" checked={paymentMethod === 'upi'} onChange={(e) => setPaymentMethod(e.target.value)} className="text-brand-maroon" />
-                  <span>Online UPI / Card</span>
-                </label>
-              </div>
-              <button onClick={placeOrder} disabled={isSubmitting} className="bg-brand-maroon text-brand-gold font-bold py-3 px-6 rounded-md hover:bg-red-800 w-full text-lg shadow-lg disabled:opacity-50">
-                {isSubmitting ? 'Placing Order...' : `Place Order (₹${getCartTotal()})`}
-              </button>
+          <div className="bg-gray-50 p-6 rounded-xl border space-y-4">
+            <h2 className="text-xl font-semibold border-b pb-2">Payment Method</h2>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="COD"
+                  checked={paymentMethod === 'COD'}
+                  onChange={() => setPaymentMethod('COD')}
+                  className="text-red-600 focus:ring-red-500"
+                />
+                <span className="font-semibold text-sm">Cash on Delivery (COD)</span>
+              </label>
+              <label className="flex items-center space-x-3 cursor-pointer">
+                <input
+                  type="radio"
+                  name="paymentMethod"
+                  value="Online"
+                  checked={paymentMethod === 'Online'}
+                  onChange={() => setPaymentMethod('Online')}
+                  className="text-red-600 focus:ring-red-500"
+                />
+                <span className="font-semibold text-sm">Online Payment / UPI</span>
+              </label>
             </div>
-          )}
+          </div>
+
+          <button
+            type="submit"
+            disabled={isSubmitting || (pincodeStatus && !pincodeStatus.available) || !!mapUrlError}
+            className="w-full bg-red-800 text-white py-3 rounded-xl font-bold text-lg hover:bg-red-900 transition disabled:opacity-50"
+          >
+            {isSubmitting ? 'Placing Order...' : 'Place Order'}
+          </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };
+
 export default Checkout;
