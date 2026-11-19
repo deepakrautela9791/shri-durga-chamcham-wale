@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
 import { useNavigate } from 'react-router-dom';
 import { FaWhatsapp, FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
+import { API_URL } from '../api';
 
 const Checkout = () => {
   const { cart, getCartTotal } = useCart();
@@ -62,7 +63,7 @@ const Checkout = () => {
         totalAmount: getCartTotal()
       };
 
-      const response = await fetch('http://localhost:5000/api/orders', {
+      const response = await fetch(`${API_URL}/api/orders`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
