@@ -1,3 +1,5 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { FaInstagram, FaFacebook, FaWhatsapp, FaMapMarkerAlt, FaPhoneAlt } from 'react-icons/fa';
 
 const Footer = () => {
@@ -11,28 +13,37 @@ const Footer = () => {
         <div>
           <h3 className="text-xl font-bold text-brand-gold mb-4">Contact Us</h3>
           <p className="flex items-start gap-2 mb-2">
-            <FaMapMarkerAlt className="mt-1 text-brand-gold" />
-            <span>Bus Stand, Mathura Road ke pass, Iglas, UP 202124</span>
+            <FaMapMarkerAlt className="mt-1 text-brand-gold flex-shrink-0" />
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=Shri+Durga+Chamcham+Wale,+Bus+Stand,+Mathura+Road,+Sarai+Bazar,+Iglas,+Uttar+Pradesh+202124"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:underline"
+            >
+              Bus Stand, Mathura Road ke pass, Iglas, UP 202124
+            </a>
           </p>
           <p className="flex items-center gap-2 mb-2">
-            <FaPhoneAlt className="text-brand-gold" />
+            <FaPhoneAlt className="text-brand-gold flex-shrink-0" />
             <span>+91 9058576620</span>
           </p>
         </div>
         <div>
           <h3 className="text-xl font-bold text-brand-gold mb-4">Quick Links</h3>
           <ul className="space-y-2">
-            <li><a href="/sweets">Our Sweets</a></li>
-            <li><a href="/contact">Track Order</a></li>
+            <li><Link to="/" className="hover:text-brand-gold transition">Home</Link></li>
+            <li><Link to="/sweets" className="hover:text-brand-gold transition">Sweets</Link></li>
+            <li><Link to="/about" className="hover:text-brand-gold transition">About Us</Link></li>
+            <li><Link to="/contact" className="hover:text-brand-gold transition">Contact</Link></li>
+            <li><Link to="/track-order" className="hover:text-brand-gold transition">Track Order</Link></li>
           </ul>
         </div>
       </div>
-      <div className="container mx-auto px-4 mt-8 pt-4 border-t border-red-900 text-center">
-        <p className="mb-2">&copy; 2026 Shri Durga Chamcham Wale. All Rights Reserved.</p>
-        <p className="font-medium text-brand-gold">Designed &amp; Developed with ❤️ by Deepak Kumar Rautela</p>
-        <p className="text-sm text-brand-cream opacity-80 mt-1">Contact Developer: <a href="mailto:devbaghel9791@gmail.com" className="hover:text-brand-gold transition-colors">devbaghel9791@gmail.com</a></p>
+      <div className="border-t border-red-900 mt-8 pt-4 text-center text-sm text-gray-400">
+        <p>&copy; {new Date().getFullYear()} Shri Durga Chamcham Wale. All rights reserved.</p>
       </div>
     </footer>
   );
 };
+
 export default Footer;
