@@ -14,37 +14,62 @@ const Contact = () => {
                 <FaMapMarkerAlt className="text-xl" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Shop Address</h3>
-                <p className="text-gray-600">Bus Stand, Mathura Road ke pass, <br/>Sarai Bazar, Iglas, <br/>Uttar Pradesh 202124</p>
+                <h3 className="font-semibold text-lg text-gray-800">Our Address</h3>
+                <p className="text-gray-600">
+                  <a
+                    href="https://www.google.com/maps/search/?api=1&query=Shri+Durga+Chamcham+Wale,+Bus+Stand,+Mathura+Road,+Sarai+Bazar,+Iglas,+Uttar+Pradesh+202124"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-brand-maroon font-medium"
+                  >
+                    Shri Durga Chamcham Wale, Bus Stand, Mathura Road, Sarai Bazar, Iglas, Uttar Pradesh 202124
+                  </a>
+                </p>
               </div>
             </div>
+
             <div className="flex items-start gap-4">
               <div className="bg-brand-cream p-3 rounded-full text-brand-maroon">
                 <FaPhoneAlt className="text-xl" />
               </div>
               <div>
-                <h3 className="font-bold text-gray-900">Phone</h3>
-                <p className="text-gray-600">+91 9058576620<br/>+91 9759328451</p>
+                <h3 className="font-semibold text-lg text-gray-800">Phone Number</h3>
+                <p className="text-gray-600">+91 9058576620</p>
               </div>
             </div>
-            <div className="mt-8">
-              <a href="#" className="flex items-center justify-center gap-2 bg-green-500 text-white font-bold py-3 px-6 rounded-lg hover:bg-green-600 transition-colors">
+
+            <div className="pt-4 border-t border-gray-100">
+              <a
+                href="https://wa.me/919058576620"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center gap-2 w-full bg-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-green-700 transition"
+              >
                 <FaWhatsapp className="text-2xl" />
-                Chat on WhatsApp
+                <span>Chat on WhatsApp</span>
               </a>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-200">
-          <h2 className="text-2xl font-bold text-brand-maroon mb-6">Store Hours</h2>
-          <div className="space-y-4 text-gray-700">
-            <div className="flex justify-between border-b pb-2">
-              <span>Monday - Sunday</span>
-              <span className="font-bold">8:00 AM - 9:00 PM</span>
+        <div className="bg-white p-8 rounded-lg shadow-lg border border-gray-200 flex flex-col justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-brand-maroon mb-6">Store Hours</h2>
+            <div className="space-y-4 text-gray-600">
+              <div className="flex justify-between border-b pb-2">
+                <span className="font-medium">Monday - Sunday</span>
+                <span className="font-semibold text-gray-800">7:00 AM - 10:00 PM</span>
+              </div>
+              <p className="text-sm text-gray-500 pt-2">
+                We are open 7 days a week to serve you fresh and authentic sweets!
+              </p>
             </div>
-            <p className="pt-4 text-sm italic text-gray-500">
-              * For bulk orders and festival hampers, please contact us at least 2 days in advance.
+          </div>
+
+          <div className="mt-8 bg-brand-cream/30 p-4 rounded-lg border border-brand-cream">
+            <h3 className="font-bold text-brand-maroon mb-1">Bulk / Special Orders</h3>
+            <p className="text-sm text-gray-600">
+              Planning a wedding, festival celebration, or corporate event? Contact us on WhatsApp or call us directly for bulk orders.
             </p>
           </div>
         </div>
@@ -52,4 +77,5 @@ const Contact = () => {
     </div>
   );
 };
+
 export default Contact;
