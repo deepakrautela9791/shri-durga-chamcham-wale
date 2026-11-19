@@ -15,17 +15,18 @@ const orderSchema = new mongoose.Schema({
     street: String,
     landmark: String
   },
-  orderItems: [{
-    name: { type: String, required: true },
-    weight: { type: String, required: true },
-    qty: { type: Number, required: true },
-    price: { type: Number, required: true }
-  }],
-  paymentMethod: { type: String, required: true },
+  items: [
+    {
+      name: { type: String, required: true },
+      weight: { type: String, required: true },
+      quantity: { type: Number, required: true },
+      price: { type: Number, required: true }
+    }
+  ],
   totalAmount: { type: Number, required: true },
-  isPaid: { type: Boolean, default: false },
-  status: { type: String, default: 'Pending' }
+  status: { type: String, enum: ['Pending', 'Confirmed', 'Processing', 'Out for Delivery', 'Delivered', 'Cancelled'], default: 'Pending' },
+  paymentMethod: { type: String, enum: ['COD', 'Online'], default: 'COD' },
+  paymentStatus: { type: String, enum: ['Pending', 'Paid'], default: 'Pending' }
 }, { timestamps: true });
 
-const Order = mongoose.model('Order', orderSchema);
-export default Order;
+export default mongoose.model('Order', orderSchema);
