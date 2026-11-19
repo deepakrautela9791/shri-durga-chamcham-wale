@@ -6,7 +6,58 @@ import Home from './pages/Home';
 import Sweets from './pages/Sweets';
 import Cart from './pages/Cart';
 import About from './pages/About';
+import Contact from './pages/Contact';import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { CartProvider } from './context/CartContext';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
+import Home from './pages/Home';
+import Sweets from './pages/Sweets';
+import Cart from './pages/Cart';
+import About from './pages/About';
 import Contact from './pages/Contact';
+import Checkout from './pages/Checkout';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
+import TrackOrder from './pages/TrackOrder';
+
+const MainLayout = ({ children }) => {
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {!isAdminPath && <Navbar />}
+      <main className="flex-grow">
+        {children}
+      </main>
+      {!isAdminPath && <Footer />}
+    </div>
+  );
+};
+
+function App() {
+  return (
+    <CartProvider>
+      <BrowserRouter>
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/sweets" element={<Sweets />} />
+            <Route path="/cart" element={<Cart />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/track-order" element={<TrackOrder />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Routes>
+        </MainLayout>
+      </BrowserRouter>
+    </CartProvider>
+  );
+}
+
+export default App;
 import Checkout from './pages/Checkout';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
