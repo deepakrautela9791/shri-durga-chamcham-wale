@@ -4,7 +4,9 @@ const productSchema = new mongoose.Schema({
   name: { type: String, required: true },
   description: { type: String, required: true },
   pricePerKg: { type: Number, required: true },
-  inStock: { type: Boolean, default: true }
+  inStock: { type: Boolean, default: true },
+  category: { type: String },
+  image: { type: String }
 }, { timestamps: true });
 
 const Product = mongoose.model('Product', productSchema);
